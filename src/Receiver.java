@@ -28,6 +28,8 @@ public class Receiver implements Runnable {
 
 		try {
 			while (true) {
+				Thread.sleep(10);
+
 				byte[] buffer = new byte[8192];
 				DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
 
@@ -35,15 +37,16 @@ public class Receiver implements Runnable {
 
 				String msg = new String(packet.getData());
 
-				if (cpt++ % max == 0)
+				if (cpt++ % max == 0) {
 					System.out.println(msg);
+				}
 			}
 		} catch (Exception e) {
+			System.out.println("erreur");
 		}
 	}
 
 	public void start() {
 		this.myThread.start();
 	}
-
 }

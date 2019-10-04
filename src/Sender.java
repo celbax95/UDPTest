@@ -16,10 +16,10 @@ public class Sender implements Runnable {
 		try {
 			this.ip = InetAddress.getByName(ip);
 			this.ds = new DatagramSocket();
-			this.myThread = new Thread(this);
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
 		}
+		this.myThread = new Thread(this);
 		this.port = port;
 		this.msg = msg;
 	}
@@ -27,8 +27,8 @@ public class Sender implements Runnable {
 	@Override
 	public void run() {
 		try {
-
 			while (true) {
+				Thread.sleep(10);
 				byte[] buffer = this.msg.getBytes();
 				DatagramPacket packet = new DatagramPacket(buffer, buffer.length, this.ip, this.port);
 
@@ -36,6 +36,7 @@ public class Sender implements Runnable {
 			}
 
 		} catch (Exception e) {
+			System.out.println("erreur");
 		}
 	}
 
