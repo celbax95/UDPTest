@@ -19,11 +19,15 @@ public class Server implements IServer {
 	private List<Sender> senders;
 	private List<Receiver> receivers;
 
+	private List<String> clients;
+
 	private ServerLinker linker;
 
 	public Server() {
 		this.senders = new ArrayList<>();
 		this.receivers = new ArrayList<>();
+
+		this.clients = new ArrayList<>();
 
 		this.linker = new ServerLinker(MY_IP.getHostAddress(), this, new Ports());
 	}
@@ -34,6 +38,11 @@ public class Server implements IServer {
 
 	@Override
 	public void someoneConnect(String clientIp, int clientServerPort) {
+		if (this.clients.contains(clientIp))
+			return;
+
+		this.clients.add(clientIp);
+
 		Receiver r = new Receiver(clientIp, clientServerPort);
 		r.start();
 		this.receivers.add(r);

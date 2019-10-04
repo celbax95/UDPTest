@@ -15,9 +15,11 @@ public class Receiver implements Runnable {
 		try {
 			this.ip = InetAddress.getByName(ip);
 			this.ds = new DatagramSocket(port);
-			this.myThread = new Thread(this);
+
 		} catch (Exception e) {
+			e.printStackTrace();
 		}
+		this.myThread = new Thread(this);
 		this.port = port;
 	}
 
@@ -28,8 +30,6 @@ public class Receiver implements Runnable {
 
 		try {
 			while (true) {
-				Thread.sleep(10);
-
 				byte[] buffer = new byte[8192];
 				DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
 
@@ -42,7 +42,7 @@ public class Receiver implements Runnable {
 				}
 			}
 		} catch (Exception e) {
-			System.out.println("erreur");
+			e.printStackTrace();
 		}
 	}
 

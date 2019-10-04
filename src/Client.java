@@ -5,8 +5,6 @@ public class Client implements IClient {
 
 	private static InetAddress MY_IP;
 
-	private static final int SEARCH_RATE = 3000;
-
 	static {
 		try {
 			MY_IP = InetAddress.getLocalHost();
@@ -22,7 +20,7 @@ public class Client implements IClient {
 	private ServerSearcher searcher;
 
 	public Client() {
-		this.searcher = new ServerSearcher(MY_IP.getHostAddress(), this, new Ports(), SEARCH_RATE);
+		this.searcher = new ServerSearcher(MY_IP.getHostAddress(), this, new Ports());
 	}
 
 	@Override

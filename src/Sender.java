@@ -28,7 +28,6 @@ public class Sender implements Runnable {
 	public void run() {
 		try {
 			while (true) {
-				Thread.sleep(10);
 				byte[] buffer = this.msg.getBytes();
 				DatagramPacket packet = new DatagramPacket(buffer, buffer.length, this.ip, this.port);
 
@@ -36,7 +35,7 @@ public class Sender implements Runnable {
 			}
 
 		} catch (Exception e) {
-			System.out.println("erreur");
+			e.printStackTrace();
 		}
 	}
 

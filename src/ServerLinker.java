@@ -1,9 +1,7 @@
 import java.io.IOException;
 import java.net.DatagramPacket;
-import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
-import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
@@ -73,10 +71,10 @@ public class ServerLinker {
 
 		try {
 			socket = new MulticastSocket(this.ports.SEARCHER_LINKER);
-			group = InetAddress.getByName(IPs.MULTICAST);
+			group = InetAddress.getByName(IPs.MULTICAST_GROUP);
 			socket.joinGroup(group);
 		} catch (Exception e) {
-			System.err.println("Error");
+			e.printStackTrace();
 			return;
 		}
 
@@ -93,10 +91,12 @@ public class ServerLinker {
 					try {
 						socket.receive(packet);
 					} catch (IOException e) {
-						System.err.println("Erreur");
+						e.printStackTrace();
 						Thread.currentThread().interrupt();
 						return;
 					}
+
+					System.out.println("ok");
 
 					String ipClient = new String(packet.getData());
 
@@ -105,7 +105,7 @@ public class ServerLinker {
 				try {
 					socket.leaveGroup(group);
 				} catch (IOException e) {
-					System.err.println("Erreur");
+					e.printStackTrace();
 				}
 				socket.close();
 			}
@@ -118,15 +118,16 @@ public class ServerLinker {
 
 		final InetAddress group;
 		try {
-			group = InetAddress.getByName(IPs.MULTICAST);
+			group = InetAddress.getByName(IPs.MULTICAST_GROUP);
 		} catch (UnknownHostException e) {
 			return;
 		}
 
-		DatagramSocket socket;
+		MulticastSocket socket;
 		try {
-			socket = new DatagramSocket();
-		} catch (SocketException e) {
+			socket = new MulticastSocket();
+		} catch (Exception e) {
+			e.printStackTrace();
 			return;
 		}
 
@@ -143,6 +144,7 @@ public class ServerLinker {
 				try {
 					socket.send(packet);
 				} catch (IOException e) {
+					e.printStackTrace();
 					return;
 				}
 

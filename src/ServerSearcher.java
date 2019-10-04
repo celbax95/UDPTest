@@ -1,9 +1,7 @@
 import java.io.IOException;
 import java.net.DatagramPacket;
-import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
-import java.net.SocketException;
 import java.net.UnknownHostException;
 
 public class ServerSearcher {
@@ -21,13 +19,10 @@ public class ServerSearcher {
 
 	private IClient client;
 
-	private int searchRate;
-
-	public ServerSearcher(String clientIp, IClient client, Ports ports, int searchRate) {
+	public ServerSearcher(String clientIp, IClient client, Ports ports) {
 		super();
 		this.clientIp = clientIp;
 		this.client = client;
-		this.searchRate = searchRate;
 		this.ports = ports;
 
 		this.searcher = null;
@@ -68,9 +63,10 @@ public class ServerSearcher {
 		final InetAddress group;
 		try {
 			socket = new MulticastSocket(this.ports.LINKER_SEARCHER);
-			group = InetAddress.getByName(IPs.MULTICAST);
+			group = InetAddress.getByName(IPs.MULTICAST_GROUP);
 			socket.joinGroup(group);
 		} catch (Exception e) {
+			e.printStackTrace();
 			return;
 		}
 
@@ -98,7 +94,7 @@ public class ServerSearcher {
 				try {
 					socket.leaveGroup(group);
 				} catch (IOException e) {
-					System.err.println("Erreur");
+					e.printStackTrace();
 				}
 				socket.close();
 			}
@@ -112,13 +108,6 @@ public class ServerSearcher {
 			public void run() {
 				while (ServerSearcher.this.searchingServer && !Thread.currentThread().isInterrupted()) {
 					ServerSearcher.this.sendMulticast(ServerSearcher.this.clientIp);
-					System.out.println("Searcher - Ip du client envoyé");
-					try {
-						Thread.sleep(ServerSearcher.this.searchRate);
-					} catch (InterruptedException e) {
-						Thread.currentThread().interrupt();
-						return;
-					}
 				}
 			}
 		})).start();
@@ -127,17 +116,17 @@ public class ServerSearcher {
 	private void sendMulticast(String message) {
 		final InetAddress group;
 		try {
-			group = InetAddress.getByName(IPs.MULTICAST);
+			group = InetAddress.getByName(IPs.MULTICAST_GROUP);
 		} catch (UnknownHostException e) {
-			System.err.println("Error");
+			e.printStackTrace();
 			return;
 		}
 
-		DatagramSocket socket;
+		MulticastSocket socket;
 		try {
-			socket = new DatagramSocket();
-		} catch (SocketException e) {
-			System.err.println("Error");
+			socket = new MulticastSocket();
+		} catch (Exception e) {
+			e.printStackTrace();
 			return;
 		}
 
@@ -148,7 +137,7 @@ public class ServerSearcher {
 		try {
 			socket.send(packet);
 		} catch (IOException e) {
-			System.err.println("Error");
+			e.printStackTrace();
 			socket.close();
 			return;
 		}
@@ -175,28 +164,27 @@ public class ServerSearcher {
 	}
 
 	private void tryToConnect(String serverInfos) {
-		new Thread(new Runnable() {
-			@Override
-			public void run() {
-				String[] serverInfosArray = serverInfos.split("/");
 
-				if (serverInfosArray.length != 4)
-					return;
+		String[] serverInfosArray = serverInfos.split("/");
 
-				if (ServerSearcher.this.isAddress(serverInfosArray[ServerSearcher.this.serverInfosArrayAddress])
-						&& ServerSearcher.this
-								.isPort(serverInfosArray[ServerSearcher.this.serverInfosArrayClientServerPort])
-						&& ServerSearcher.this
-								.isPort(serverInfosArray[ServerSearcher.this.serverInfosArrayServerClientPort])) {
+		if (serverInfosArray.length != 4)
+			return;
 
-					ServerSearcher.this.client.connectToServer(
-							serverInfosArray[ServerSearcher.this.serverInfosArrayAddress],
-							Integer.parseInt(serverInfosArray[ServerSearcher.this.serverInfosArrayClientServerPort]),
-							Integer.parseInt(serverInfosArray[ServerSearcher.this.serverInfosArrayServerClientPort]));
+		if (ServerSearcher.this.isAddress(serverInfosArray[ServerSearcher.this.serverInfosArrayAddress])
+				&& ServerSearcher.this.isPort(serverInfosArray[ServerSearcher.this.serverInfosArrayClientServerPort])
+				&& ServerSearcher.this.isPort(serverInfosArray[ServerSearcher.this.serverInfosArrayServerClientPort])) {
 
-					ServerSearcher.this.setSearchingServer(false);
-				}
+			ServerSearcher.this.setSearchingServer(false);
+
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
 			}
-		}).start();
+
+			ServerSearcher.this.client.connectToServer(serverInfosArray[ServerSearcher.this.serverInfosArrayAddress],
+					Integer.parseInt(serverInfosArray[ServerSearcher.this.serverInfosArrayClientServerPort]),
+					Integer.parseInt(serverInfosArray[ServerSearcher.this.serverInfosArrayServerClientPort]));
+		}
 	}
 }
