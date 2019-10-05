@@ -30,6 +30,8 @@ public class Receiver implements Runnable {
 
 		try {
 			while (true) {
+				Thread.sleep(1);
+
 				byte[] buffer = new byte[8192];
 				DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
 
