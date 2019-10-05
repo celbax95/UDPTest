@@ -49,6 +49,7 @@ public class ServerLinker {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	private boolean isListeningForNew() {
 		return this.listeningForNew;
 	}
@@ -71,6 +72,7 @@ public class ServerLinker {
 
 		try {
 			socket = new MulticastSocket(this.ports.SEARCHER_LINKER);
+			socket.setInterface(InetAddress.getLocalHost());
 			group = InetAddress.getByName(IPs.MULTICAST_GROUP);
 			socket.joinGroup(group);
 		} catch (Exception e) {
@@ -78,37 +80,32 @@ public class ServerLinker {
 			return;
 		}
 
-		(this.listener = new Thread(new Runnable() {
-			@Override
-			public void run() {
-				byte[] buffer = new byte[8192];
+		(this.listener = new Thread(() -> {
+			byte[] buffer = new byte[8192];
 
-				while (ServerLinker.this.listeningForNew && !ServerLinker.this.listener.isInterrupted()
-						&& !socket.isClosed()) {
+			while (ServerLinker.this.listeningForNew && !ServerLinker.this.listener.isInterrupted()
+					&& !socket.isClosed()) {
 
-					DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+				DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
 
-					try {
-						socket.receive(packet);
-					} catch (IOException e) {
-						e.printStackTrace();
-						Thread.currentThread().interrupt();
-						return;
-					}
-
-					System.out.println("ok");
-
-					String ipClient = new String(packet.getData());
-
-					ServerLinker.this.linkClient(ipClient);
-				}
 				try {
-					socket.leaveGroup(group);
-				} catch (IOException e) {
-					e.printStackTrace();
+					socket.receive(packet);
+				} catch (IOException e1) {
+					e1.printStackTrace();
+					Thread.currentThread().interrupt();
+					return;
 				}
-				socket.close();
+
+				String ipClient = new String(packet.getData());
+
+				ServerLinker.this.linkClient(ipClient);
 			}
+			try {
+				socket.leaveGroup(group);
+			} catch (IOException e2) {
+				e2.printStackTrace();
+			}
+			socket.close();
 		})).start();
 	}
 
@@ -126,32 +123,36 @@ public class ServerLinker {
 		MulticastSocket socket;
 		try {
 			socket = new MulticastSocket();
+			socket.setInterface(InetAddress.getLocalHost());
+			socket.joinGroup(group);
 		} catch (Exception e) {
 			e.printStackTrace();
 			return;
 		}
 
-		(this.sender = new Thread(new Runnable() {
-			@Override
-			public void run() {
+		(this.sender = new Thread(() -> {
 
-				byte[] buffer = (ServerLinker.this.serverIP + "/" + ServerLinker.this.assignedPorts.get(address) + "/"
-						+ ServerLinker.this.ports.SERVER_CLIENT + "/").getBytes();
+			byte[] buffer = (ServerLinker.this.serverIP + "/" + ServerLinker.this.assignedPorts.get(address) + "/"
+					+ ServerLinker.this.ports.SERVER_CLIENT + "/").getBytes();
 
-				DatagramPacket packet = new DatagramPacket(buffer, buffer.length, group,
-						ServerLinker.this.ports.LINKER_SEARCHER);
+			DatagramPacket packet = new DatagramPacket(buffer, buffer.length, group,
+					ServerLinker.this.ports.LINKER_SEARCHER);
 
-				try {
-					socket.send(packet);
-				} catch (IOException e) {
-					e.printStackTrace();
-					return;
-				}
-
-				ServerLinker.this.server.someoneConnect(address, ServerLinker.this.assignedPorts.get(address));
-
-				socket.close();
+			try {
+				socket.send(packet);
+			} catch (IOException e) {
+				e.printStackTrace();
+				return;
 			}
+
+			ServerLinker.this.server.someoneConnect(address, ServerLinker.this.assignedPorts.get(address));
+
+			try {
+				socket.leaveGroup(group);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			socket.close();
 		})).start();
 	}
 

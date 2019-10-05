@@ -51,7 +51,7 @@ public class ServerSearcher {
 		return tmport >= 0 && tmport <= 65535;
 	}
 
-	private boolean isSearchingServer() {
+	public boolean isSearchingServer() {
 		return this.searchingServer;
 	}
 
@@ -63,6 +63,7 @@ public class ServerSearcher {
 		final InetAddress group;
 		try {
 			socket = new MulticastSocket(this.ports.LINKER_SEARCHER);
+			socket.setInterface(InetAddress.getLocalHost());
 			group = InetAddress.getByName(IPs.MULTICAST_GROUP);
 			socket.joinGroup(group);
 		} catch (Exception e) {
@@ -70,45 +71,38 @@ public class ServerSearcher {
 			return;
 		}
 
-		(this.receiver = new Thread(new Runnable() {
-			@Override
-			public void run() {
-				while (ServerSearcher.this.searchingServer && !socket.isClosed()) {
+		(this.receiver = new Thread(() -> {
+			while (ServerSearcher.this.searchingServer && !socket.isClosed()) {
 
-					byte[] buffer = new byte[8192];
+				byte[] buffer = new byte[8192];
 
-					DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+				DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
 
-					try {
-						socket.receive(packet);
-					} catch (IOException e) {
-						System.err.println("Erreur");
-						Thread.currentThread().interrupt();
-						return;
-					}
-
-					String serverInfos = new String(packet.getData());
-
-					ServerSearcher.this.tryToConnect(serverInfos);
-				}
 				try {
-					socket.leaveGroup(group);
-				} catch (IOException e) {
-					e.printStackTrace();
+					socket.receive(packet);
+				} catch (IOException e1) {
+					e1.printStackTrace();
+					Thread.currentThread().interrupt();
+					return;
 				}
-				socket.close();
-			}
 
+				String serverInfos = new String(packet.getData());
+
+				ServerSearcher.this.tryToConnect(serverInfos);
+			}
+			try {
+				socket.leaveGroup(group);
+			} catch (IOException e2) {
+				e2.printStackTrace();
+			}
+			socket.close();
 		})).start();
 	}
 
 	private void searchServer() {
-		(this.searcher = new Thread(new Runnable() {
-			@Override
-			public void run() {
-				while (ServerSearcher.this.searchingServer && !Thread.currentThread().isInterrupted()) {
-					ServerSearcher.this.sendMulticast(ServerSearcher.this.clientIp);
-				}
+		(this.searcher = new Thread(() -> {
+			while (ServerSearcher.this.searchingServer && !Thread.currentThread().isInterrupted()) {
+				ServerSearcher.this.sendMulticast(ServerSearcher.this.clientIp);
 			}
 		})).start();
 	}
@@ -125,6 +119,8 @@ public class ServerSearcher {
 		MulticastSocket socket;
 		try {
 			socket = new MulticastSocket();
+			socket.setInterface(InetAddress.getLocalHost());
+			socket.joinGroup(group);
 		} catch (Exception e) {
 			e.printStackTrace();
 			return;
@@ -142,6 +138,11 @@ public class ServerSearcher {
 			return;
 		}
 
+		try {
+			socket.leaveGroup(group);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		socket.close();
 	}
 
