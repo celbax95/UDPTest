@@ -37,9 +37,7 @@ public class Receiver implements Runnable {
 
 				String msg = new String(packet.getData());
 
-				if (cpt++ % max == 0) {
-					System.out.println(msg);
-				}
+				System.out.println(msg);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
