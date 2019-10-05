@@ -26,11 +26,13 @@ public class Receiver implements Runnable {
 	@Override
 	public void run() {
 
-		int cpt = 0, max = 5000;
+		Cooldown c = new Cooldown(1000);
+		c.start();
+
+		int cpt = 0;
 
 		try {
 			while (true) {
-				Thread.sleep(1);
 
 				byte[] buffer = new byte[8192];
 				DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
@@ -39,8 +41,14 @@ public class Receiver implements Runnable {
 
 				String msg = new String(packet.getData());
 
-				cpt %= Integer.MAX_VALUE;
-				System.out.println(cpt++ + " - " + msg);
+				cpt++;
+
+				if (c.resetOnDone()) {
+					System.out.println(cpt + "\t: msg / sec");
+					System.out.println(Math.round((double) 1000 / cpt * 100.) / 100. + "\t: inter / msg");
+					System.out.println("\n\n");
+					cpt = 0;
+				}
 			}
 		} catch (Exception e) {
 			e.printStackTrace();

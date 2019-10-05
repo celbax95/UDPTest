@@ -28,6 +28,8 @@ public class Sender implements Runnable {
 	public void run() {
 		try {
 			while (true) {
+				Thread.sleep(1);
+
 				byte[] buffer = this.msg.getBytes();
 				DatagramPacket packet = new DatagramPacket(buffer, buffer.length, this.ip, this.port);
 
